@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-set -o errexit
-set -o pipefail
-set -o nounset
+#set -o errexit
+#set -o pipefail
+#set -o nounset
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$SCRIPTDIR/../.."
@@ -25,15 +25,14 @@ locate_in_all_namespaces() {
 
     local rc=0
 
-    echo "Missing $type bundle repo: ${quay_namespace}/${type}-${object}, creating..."
     for quay_namespace in "${CATALOG_NAMESPACES[@]}"; do
         found=$(locate_bundle_repo "$quay_namespace" "$type" "$object")
         if [ "$found" != "200" ]; then
             echo "Missing $type bundle repo: ${quay_namespace}/${type}-${object}, creating..."
-            echo "DEBUG: Creating quay repository https://quay.io/${quay_namespace}/tekton-catalog/${object}..."
+            echo "DEBUG: Creating quay repository https://quay.io/${quay_namespace}/tekton-catalog/${type}-${object}..."
 #            curl --oauth2-bearer "${QUAY_TOKEN}" 'https://quay.io/api/v1/repository' --json '{
 #              "namespace": '"${quay_namespace}"',
-#              "repository": "tekton-catalog/'"${object}"'",
+#              "repository": "tekton-catalog/'"${type}-${object}"'",
 #              "visibility": "public",
 #              "description": ""
 #            }'
