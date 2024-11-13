@@ -25,10 +25,18 @@ locate_in_all_namespaces() {
 
     local rc=0
 
+    echo "Missing $type bundle repo: ${quay_namespace}/${type}-${object}, creating..."
     for quay_namespace in "${CATALOG_NAMESPACES[@]}"; do
         found=$(locate_bundle_repo "$quay_namespace" "$type" "$object")
         if [ "$found" != "200" ]; then
-            echo "Missing $type bundle repo: ${quay_namespace}/${type}-${object}"
+            echo "Missing $type bundle repo: ${quay_namespace}/${type}-${object}, creating..."
+            echo "DEBUG: Creating quay repository https://quay.io/${quay_namespace}/tekton-catalog/${object}..."
+#            curl --oauth2-bearer "${QUAY_TOKEN}" 'https://quay.io/api/v1/repository' --json '{
+#              "namespace": '"${quay_namespace}"',
+#              "repository": "tekton-catalog/'"${object}"'",
+#              "visibility": "public",
+#              "description": ""
+#            }'
             rc=1
         fi
     done
@@ -36,39 +44,27 @@ locate_in_all_namespaces() {
     return "$rc"
 }
 
-has_missing_repo=
-
 echo "Checking existence of task and pipeline bundle repositories ..."
 
 # tasks
-for task_dir in $(find task/*/*/ -maxdepth 0 -type d); do
-    if [ ! -f $task_dir/kustomization.yaml ]; then
+while IFS= read -r -d '' task_dir
+do
+    if [ ! -f "$task_dir"/kustomization.yaml ]; then
       # expected structure: task/${name}/${version}/${name}.yaml
       task_name=$(basename "$(dirname "$task_dir")")
       task_name=$(yq < "$task_dir/$task_name.yaml" .metadata.name)
     else
       task_name=$(oc kustomize "$task_dir" | yq .metadata.name)
     fi
+    echo "Checking ${task_dir}..."
 
-    if ! locate_in_all_namespaces task "$task_name"; then
-        has_missing_repo=yes
-    fi
-done
+    locate_in_all_namespaces task "$task_name"
+done < <(find task/*/*/ -maxdepth 0 -type d -print0)
 
 # pipelines
-pl_names=($(oc kustomize pipelines/ | yq -o json '.metadata.name' | jq -r))
+pl_names=("$(oc kustomize pipelines/ | yq -o json '.metadata.name' | jq -r)")
 # Currently, only one pipeline for core services CI
-pl_names+=($(oc kustomize pipelines/core-services/ | yq -o json '"core-services-" + .metadata.name' | jq -r))
-for pl_name in ${pl_names[@]}; do
-    if ! locate_in_all_namespaces pipeline "$pl_name"; then
-        has_missing_repo=yes
-    fi
+pl_names+=("$(oc kustomize pipelines/core-services/ | yq -o json '"core-services-" + .metadata.name' | jq -r)")
+for pl_name in "${pl_names[@]}"; do
+    locate_in_all_namespaces pipeline "$pl_name"
 done
-
-if [ -n "$has_missing_repo" ]; then
-    echo "Please contact Build team - #forum-konflux-build that the missing repos should be created in:"
-    echo "- https://quay.io/organization/konflux-ci"
-    exit 1
-else
-    echo "Done"
-fi
