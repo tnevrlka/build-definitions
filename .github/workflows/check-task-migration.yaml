@@ -1,7 +1,7 @@
 name: Check task migrations
 "on":
   pull_request:
-    branches: [main]
+    branches: [onboard-to-task-repo-shared-ci]
   merge_group:
     types: [checks_requested]
 jobs:
@@ -39,7 +39,7 @@ jobs:
 
           kubectl get all -n tekton-pipelines
           # Require name main
-          git branch main origin/main
+          git branch main origin/onboard-to-task-repo-shared-ci
           # Make `git branch --show-current` works.
           git checkout -b pr-verify
           export IN_CLUSTER=1

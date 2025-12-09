@@ -8,7 +8,7 @@
 name: Check versioning
 'on':
   pull_request:
-    branches: [main]
+    branches: [onboard-to-task-repo-shared-ci]
 jobs:
   check:
     name: Check versioning

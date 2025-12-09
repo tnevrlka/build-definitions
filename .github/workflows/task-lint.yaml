@@ -9,7 +9,7 @@ name: "Lint Tekton Tasks"
 
 'on':
   pull_request:
-    branches: [main]
+    branches: [onboard-to-task-repo-shared-ci]
     paths:
       - 'task/**/*.yaml'
   merge_group:

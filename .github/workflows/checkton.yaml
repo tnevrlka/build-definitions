@@ -8,7 +8,7 @@
 name: Checkton
 "on":
   pull_request:
-    branches: [main]
+    branches: [onboard-to-task-repo-shared-ci]
   merge_group:
     types: [checks_requested]
 jobs:
